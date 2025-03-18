@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Entry;
+use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -16,23 +17,35 @@ class EntryController extends Controller
         $request->validate([
             'valor' => 'required|numeric',
             'user_id' => 'required',
+            'origim' => 'required',
         ]);
 
- $entry = Entry::create([
+        $entry = Entry::create([
             'user_id' => $request->user_id,
             'amount' => $request->valor,
+            'origim' => $request->origim,
             'entry_date' =>  Carbon::now(),
         ]);
 
-        return response()->json($entry, 201);
+        // Encontrar o usuário
+        $user = User::find($request->user_id);
+
+        if ($user) {
+            // Incrementar o saldo manualmente
+            $user->saldo += $request->valor;
+            $user->save(); // Salvar as alterações no banco de dados
+
+            return response()->json($entry, 201);
+        } else {
+            return response()->json(['message' => 'Usuário não encontrado'], 404);
+        }
+        User::find($request->user_id)->increment('saldo', $request->valor);
     }
 
     public function getCurrentMonthEntry(Request $request)
     {
-        $entry = Entry::where('user_id',  $request->user_id)
-                      ->whereMonth('entry_date', Carbon::now())
-                      ->sum('amount');
+        $entry = Entry::where('user_id',  $request->user_id)->get();
 
-        return response()->json(['current_month_entry' => $entry], 200);
+        return response()->json($entry, 200);
     }
 }
