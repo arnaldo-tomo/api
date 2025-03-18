@@ -24,29 +24,34 @@ class TransactionController extends Controller
                         ->get();
 
         // Buscar os gastos (expenses) do mês corrente para o usuário, com base no campo created_at
-        $expenses = Expense::where('user_id', $userId)
-                           ->whereYear('created_at', $currentYear)
-                           ->whereMonth('created_at', $currentMonth)
-                           ->get();
+        // $expenses = Expense::where( $userId)
+        //                    ->whereYear('created_at', $currentYear)
+        //                    ->whereMonth('created_at', $currentMonth)
+        //                    ->get();
+
+
+
+        $expenses = Expense::where('user_id',$userId)->with('category')->get();
+
 
         // Combinar entradas e gastos em um único array
-        $transactions = $entries->map(function ($entry) {
-            return [
-                'id' => $entry->id,
-                'type' => 'entrada',
-                'amount' => $entry->amount,
-                'date' => $entry->created_at->format('d/m/y'), // Usando created_at
-            ];
-        })->merge($expenses->map(function ($expense) {
-            return [
-                'id' => $expense->id,
-                'type' => 'gasto',
-                'amount' => $expense->amount,
-                'date' => $expense->created_at->format('d/m/y'), // Usando created_at
-            ];
-        }))->sortBy('date')->values()->take(6);
+        // $transactions = $entries->map(function ($entry) {
+        //     return [
+        //         'id' => $entry->id,
+        //         'type' => 'entrada',
+        //         'amount' => $entry->amount,
+        //         'date' => $entry->created_at->format('d/m/y'), // Usando created_at
+        //     ];
+        // })->merge($expenses->map(function ($expense) {
+        //     return [
+        //         'id' => $expense->id,
+        //         'type' => 'gasto',
+        //         'amount' => $expense->amount,
+        //         'date' => $expense->created_at->format('d/m/y'), // Usando created_at
+        //     ];
+        // }))->sortBy('date')->values()->take(6);
 
-        return response()->json($transactions);
+        return response()->json($expenses);
     }
 
     public function getFilteredTransactions(Request $request)
